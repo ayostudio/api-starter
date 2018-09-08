@@ -116,11 +116,16 @@ describe('The authentication utility', () => {
       expect(
         authenticate.authenticate({ ...testUser, email: 'wrong@email.com' }),
       ).to.be.rejectedWith(Error);
-      return authenticate
-        .authenticate({ ...testUser, email: 'wrong@email.com' })
-        .catch((err) => {
-          expect(err.message).to.equal('User information incorrect');
-        });
+      return authenticate.authenticate({ ...testUser, email: 'wrong@email.com' }).catch((err) => {
+        expect(err.message).to.equal('User information incorrect');
+      });
+    });
+
+    it('should return an error User.authenticate errors', () => {
+      expect(authenticate.authenticate({ email: {}, password: {} })).to.be.rejectedWith(Error);
+      return authenticate.authenticate({ email: {}, password: {} }).catch((err) => {
+        expect(err.name).to.equal('Error');
+      });
     });
   });
 

@@ -69,18 +69,16 @@ describe('The validation utility', () => {
     it('should be false if the email is already in use', () => authenticate
       .registerUser(testUser)
       .then(
-        () => expect(validation.isUnique(testUser.email, 'user', 'email')).to
-          .eventually.be.false,
+        () => expect(validation.isUnique(testUser.email, 'user', 'email')).to.eventually.be.false,
       ));
 
-    it('should be true if the email is not already in use', () => expect(validation.isUnique(testUser.email, 'user', 'email')).to.eventually
-      .be.true);
+    it('should be true if the email is not already in use', () => expect(validation.isUnique(testUser.email, 'user', 'email')).to.eventually.be.true);
 
     it('should default to use the users model', () => expect(validation.isUnique(testUser.email)).to.eventually.be.true);
 
-    it('error if something went wrong with the function', () => expect(
-      validation.isUnique(testUser.email, 'fakeModel', 'email'),
-    ).to.eventually.be.an('error'));
+    it('error if something went wrong with the function', () => expect(validation.isUnique(testUser.email, 'fakeModel', 'email')).to.eventually.be.an(
+      'error',
+    ));
   });
 
   describe('doesContain()', () => {
@@ -135,9 +133,7 @@ describe('The validation utility', () => {
           value: 'something',
         },
       };
-      expect(validation.buildValidationResponse(validationResponse)).to.be.an(
-        'object',
-      );
+      expect(validation.buildValidationResponse(validationResponse)).to.be.an('object');
     });
 
     it("should return an error when you don't pass a valid validation response", () => {
