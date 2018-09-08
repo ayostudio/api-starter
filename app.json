@@ -1,0 +1,5 @@
+{
+  "name": "Node Starter",
+  "description": "Node.js API starter.",
+  "image": "heroku/nodejs"
+}
