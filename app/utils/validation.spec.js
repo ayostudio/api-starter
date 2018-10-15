@@ -14,6 +14,9 @@ const testUser = {
   email: 'test@test.com',
   password: 'password',
   name: 'Testy Test',
+  type: 'individual',
+  country: 'GB',
+  termsSigned: true,
 };
 
 use(sinonChai);
@@ -22,7 +25,7 @@ use(chaiAsPromised);
 before((done) => {
   mockgoose.prepareStorage().then(() => {
     mongoose.connect(
-      'mongodb://localhost:27017/testing',
+      'mongodb://mongodb/testing',
       { useNewUrlParser: true },
       (err) => {
         done(err);
@@ -114,6 +117,24 @@ describe('The validation utility', () => {
 
     it('should be true if the item is in the array', () => {
       expect(validation.isIn(['hello', 'goodbye'], 'hello')).to.be.true;
+    });
+  });
+
+  describe('isValidCountryCode()', () => {
+    it('should be a function', () => {
+      expect(validation.isValidCountryCode).to.be.a('function');
+    });
+
+    it('should accept 1 arguments', () => {
+      expect(validation.isValidCountryCode.length).to.equal(1);
+    });
+
+    it('should be false if the country code is invalid', () => {
+      expect(validation.isValidCountryCode('FAKE')).to.be.false;
+    });
+
+    it('should be true if the country code is valid', () => {
+      expect(validation.isValidCountryCode('GB')).to.be.true;
     });
   });
 

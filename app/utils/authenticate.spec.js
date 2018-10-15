@@ -6,6 +6,7 @@ const {
   describe, it, before, after, afterEach,
 } = require('mocha');
 const chaiAsPromised = require('chai-as-promised');
+const bcrypt = require('bcrypt-nodejs');
 const authenticate = require('./authenticate');
 
 const mockgoose = new Mockgoose(mongoose);
@@ -13,6 +14,9 @@ const testUser = {
   email: 'test@test.com',
   password: 'password',
   name: 'Testy Test',
+  type: 'individual',
+  country: 'GB',
+  termsSigned: 'true',
 };
 
 use(sinonChai);
@@ -50,9 +54,14 @@ describe('The authentication utility', () => {
     it('should successfully create a new user when passed a valid user object', () => authenticate.registerUser(testUser).then((user) => {
       expect(user._doc).to.be.an('object');
       expect(user._doc).to.have.all.keys([
+        'confirmed',
+        'admin',
         '_id',
         'email',
         'name',
+        'type',
+        'country',
+        'termsSignedAt',
         'salt',
         'hash',
         'createdAt',
@@ -139,7 +148,7 @@ describe('The authentication utility', () => {
     it('should return an object containing the token and the user', () => authenticate
       .registerUser(testUser)
       .then(() => authenticate.authenticate(testUser))
-      .then(authenticate.getAccessToken)
+      .then(user => authenticate.getAccessToken(user, 'testAppKey'))
       .then((response) => {
         expect(response).to.be.an('object');
         expect(response.user).to.be.a('object');
@@ -167,5 +176,107 @@ describe('The authentication utility', () => {
       .then(() => authenticate.getAccessToken({}).catch((err) => {
         expect(err.message).to.equal('User is missing');
       })));
+  });
+
+  describe('saltExistingUsers()', () => {
+    afterEach(() => mongoose.model('User').deleteMany({}));
+
+    it('should be a function', () => {
+      expect(authenticate.saltExistingUsers).to.be.a('function');
+    });
+
+    it('should accept 2 arguments', () => {
+      expect(authenticate.saltExistingUsers.length).to.equal(2);
+    });
+
+    it('should return a user if the user already has a salt', () => authenticate
+      .registerUser(testUser)
+      .then(() => authenticate.saltExistingUsers(testUser.email, testUser.password))
+      .then((user) => {
+        expect(user).to.be.a('object');
+      }));
+
+    it('should return an error when missing the email or password', () => authenticate
+      .registerUser(testUser)
+      .then(() => {
+        expect(authenticate.saltExistingUsers()).to.be.rejected;
+        expect(authenticate.saltExistingUsers()).to.be.rejectedWith(Error);
+      })
+      .then(() => authenticate.saltExistingUsers().catch((err) => {
+        expect(err.message).to.equal('Incorrect information');
+      })));
+
+    it('should return an error when the email is malformed', () => authenticate
+      .registerUser(testUser)
+      .then(() => {
+        expect(authenticate.saltExistingUsers({}, 'test')).to.be.rejected;
+        expect(authenticate.saltExistingUsers({}, 'test')).to.be.rejectedWith(Error);
+      })
+      .then(() => authenticate.saltExistingUsers({}, 'test').catch((err) => {
+        expect(err.name).to.equal('CastError');
+      })));
+
+    it('should return an error when missing the user does not exist', () => authenticate
+      .registerUser(testUser)
+      .then(() => {
+        expect(authenticate.saltExistingUsers('fake@email.com', 'test')).to.be.rejected;
+        expect(authenticate.saltExistingUsers('fake@email.com', 'test')).to.be.rejectedWith(
+          Error,
+        );
+      })
+      .then(() => authenticate.saltExistingUsers('fake@email.com', 'test').catch((err) => {
+        expect(err.message).to.equal('Incorrect information');
+      })));
+
+    it('should create a salt for existing users without one', () => {
+      const push = {
+        password: bcrypt.hashSync('password', bcrypt.genSaltSync(8), null),
+      };
+      return authenticate.registerUser(testUser).then(() => mongoose
+        .model('User')
+        .update(
+          { email: testUser.email },
+          {
+            $unset: { salt: 1 },
+            $push: push,
+          },
+        )
+        .then(() => authenticate
+          .saltExistingUsers(testUser.email, 'password')
+          .then((user) => {
+            expect(user).to.be.a('object');
+          })
+          .then(() => mongoose
+            .model('User')
+            .findByUsername(testUser.email)
+            .countDocuments())
+          .then((existingUserWithSalt) => {
+            expect(existingUserWithSalt).to.equal(1);
+          })));
+    });
+
+    it('should fail if password to existing user is incorrect', () => {
+      const push = {
+        password: bcrypt.hashSync('password', bcrypt.genSaltSync(8), null),
+      };
+      return authenticate.registerUser(testUser).then(() => mongoose
+        .model('User')
+        .update(
+          { email: testUser.email },
+          {
+            $unset: { salt: 1 },
+            $push: push,
+          },
+        )
+        .then(() => {
+          expect(authenticate.saltExistingUsers(testUser.email, 'notmypassword')).to.be.rejected;
+          expect(
+            authenticate.saltExistingUsers(testUser.email, 'notmypassword'),
+          ).to.be.rejectedWith(Error);
+        })
+        .then(() => authenticate.saltExistingUsers(testUser.email, 'notmypassword').catch((err) => {
+          expect(err.message).to.equal('Incorrect information');
+        })));
+    });
   });
 });

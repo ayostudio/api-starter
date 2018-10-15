@@ -13,7 +13,9 @@
     "test:integration": "NODE_ENV=test PORT=8081 mocha --no-deprecation --timeout 10000 --exit */*.test.js"
   },
   "dependencies": {
+    "@sendgrid/mail": "^6.3.1",
     "bcrypt": "^3.0.0",
+    "bcrypt-nodejs": "^0.0.3",
     "body-parser": "^1.18.3",
     "compression": "^1.7.3",
     "cors": "^2.8.4",
@@ -25,6 +27,7 @@
     "express-healthcheck": "^0.1.0",
     "express-jwt": "^5.3.1",
     "fs": "0.0.1-security",
+    "inline-css": "^2.4.0",
     "jsonwebtoken": "^8.3.0",
     "mongoose": "^5.2.9",
     "morgan": "^1.8.1",

@@ -5,6 +5,7 @@ const {
   describe, it, before, after, beforeEach,
 } = require('mocha');
 const { Mockgoose } = require('mockgoose');
+const config = require('../app/config');
 
 const mockgoose = new Mockgoose(mongoose);
 const { expect } = chai;
@@ -17,6 +18,9 @@ const testUser = {
   email: 'test@test.com',
   password: 'password',
   name: 'Testy Test',
+  type: 'individual',
+  country: 'GB',
+  termsSigned: true,
 };
 
 describe('API /api/v1/user', () => {
@@ -40,10 +44,10 @@ describe('API /api/v1/user', () => {
     it('it should return 200 when passed a valid token', () => authentication
       .registerUser(testUser)
       .then(() => authentication.authenticate(testUser))
-      .then(authentication.getAccessToken)
+      .then(user => authentication.getAccessToken(user, config.adminKey))
       .then(response => chai
         .request(server)
-        .get('/api/v1/user')
+        .get(`/api/v1/user?app=${config.adminKey}`)
         .set('Authorization', `Bearer ${response.token}`)
         .set('Content-Type', 'application/json')
         .set('Accept', 'application/json')
@@ -53,7 +57,7 @@ describe('API /api/v1/user', () => {
 
     it('it should return 401 when passed an invalid token', () => chai
       .request(server)
-      .get('/api/v1/user')
+      .get(`/api/v1/user?app=${config.adminKey}`)
       .set('Content-Type', 'application/json')
       .set('Authorization', 'Bearer fakeToken')
       .set('Accept', 'application/json')
@@ -63,7 +67,7 @@ describe('API /api/v1/user', () => {
 
     it("it should return 401 when haven't passed a token", () => chai
       .request(server)
-      .get('/api/v1/user')
+      .get(`/api/v1/user?app=${config.adminKey}`)
       .set('Content-Type', 'application/json')
       .set('Accept', 'application/json')
       .then((res) => {

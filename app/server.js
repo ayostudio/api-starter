@@ -7,6 +7,7 @@ const cors = require('cors');
 const config = require('./config');
 const passport = require('./utils/passport');
 const logger = require('./utils/logger');
+const { permissions } = require('./middleware');
 
 const app = express();
 
@@ -20,6 +21,8 @@ module.exports = (isTest = false) => {
   app.engine('.ejs', require('ejs').__express);
   app.use('/public', express.static(`${__dirname}/views`));
   app.set('view engine', 'ejs');
+
+  app.use('/api/*', permissions);
 
   // Read Version 1 Routes
   fs.readdirSync(`${__dirname}/routes/v1`).forEach((file) => {

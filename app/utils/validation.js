@@ -43,6 +43,17 @@ const isIn = (array, value) => {
 };
 
 /**
+ * Check if the country code is a valid county code
+ * @param {string} value The country code
+ */
+const isValidCountryCode = (value) => {
+  const countries = require('./countries');
+  const avaliableCountries = countries.getSupportedCountries();
+  const find = Object.keys(avaliableCountries).filter(key => key === value);
+  return find.length > 0;
+};
+
+/**
  * Rebuilds the object into a nicer validation response
  * @param {object} errorObj The error object from express validation
  */
@@ -52,7 +63,7 @@ const buildValidationResponse = (errorObj) => {
     return new Error('You need to pass a valid express validation object');
   }
 
-  Object.keys(errorObj).forEach((key) => {
+  Object.keys(errorObj).map((key) => {
     errors[key] = {
       message: errorObj[key].message,
       value: errorObj[key].value,
@@ -65,6 +76,7 @@ const buildValidationResponse = (errorObj) => {
 module.exports = {
   isEmail,
   isUnique,
+  isValidCountryCode,
   doesContain,
   isIn,
   buildValidationResponse,
